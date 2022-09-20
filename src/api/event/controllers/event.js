@@ -1,13 +1,63 @@
 "use strict";
-/**
- * event controller
- */
+const { parseMultipartData, sanitizeEntity } = require("@strapi/utils");
 
 const { createCoreController } = require("@strapi/strapi").factories;
 
-// module.exports = createCoreController("api::event.event");
 module.exports = createCoreController("api::event.event", ({ strapi }) => ({
-  //  get logged in users
+  // create event with linked user
+  async create(ctx) {
+    const { id } = ctx.state.user;
+    console.log("id", id);
+    const res = await super.create(ctx);
+    console.log("res", res);
+    const updatedRes = await strapi.entityService.update(
+      "api::event.event",
+      res.data.id,
+      { data: { users_permissions: id } }
+    );
+
+    return updatedRes;
+  },
+
+  // update event by linked user
+  async update(ctx) {
+    const { id } = ctx.state.user;
+
+    const [event] = await strapi.entityService.findMany("api::event.event", {
+      filters: {
+        id: ctx.request.params.id,
+        users_permissions: id,
+      },
+    });
+
+    if (event) {
+      const res = await super.update(ctx);
+      return res;
+    } else {
+      return ctx.unauthorized("You are not allowed to update this event");
+    }
+  },
+
+  // delete event by linked user
+  async delete(ctx) {
+    const { id } = ctx.state.user;
+
+    const [event] = await strapi.entityService.findMany("api::event.event", {
+      filters: {
+        id: ctx.request.params.id,
+        users_permissions: id,
+      },
+    });
+
+    if (event) {
+      const res = await super.delete(ctx);
+      return res;
+    } else {
+      return ctx.unauthorized("You are not allowed to delete this event");
+    }
+  },
+
+  //  get logged in users with events
   async me(ctx) {
     const user = ctx.state.user;
 
@@ -25,6 +75,9 @@ module.exports = createCoreController("api::event.event", ({ strapi }) => ({
             $eq: user.id,
           },
         },
+      },
+      orderBy: {
+        date: "asc",
       },
       populate: ["image", "users_permissions"],
     });
