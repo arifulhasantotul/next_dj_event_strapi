@@ -10,8 +10,6 @@ Icon
 .Trashes
 ._*
 
-package-lock.json
-yarn.lock
 
 ############################
 # Linux
@@ -114,3 +112,6 @@ exports
 *.cache
 build
 .strapi-updater.json
+
+package-lock.json
+yarn.lock
