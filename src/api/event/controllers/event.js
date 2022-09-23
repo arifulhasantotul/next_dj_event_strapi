@@ -1,5 +1,4 @@
 "use strict";
-const { parseMultipartData, sanitizeEntity } = require("@strapi/utils");
 
 const { createCoreController } = require("@strapi/strapi").factories;
 
@@ -7,9 +6,8 @@ module.exports = createCoreController("api::event.event", ({ strapi }) => ({
   // create event with linked user
   async create(ctx) {
     const { id } = ctx.state.user;
-    console.log("id", id);
     const res = await super.create(ctx);
-    console.log("res", res);
+
     const updatedRes = await strapi.entityService.update(
       "api::event.event",
       res.data.id,
@@ -30,12 +28,13 @@ module.exports = createCoreController("api::event.event", ({ strapi }) => ({
       },
     });
 
-    if (event) {
-      const res = await super.update(ctx);
-      return res;
-    } else {
-      return ctx.unauthorized("You are not allowed to update this event");
+    if (!event) {
+      return ctx.unauthorized("Need Authorization", {
+        thisMessage: "You are not allowed to update this event",
+      });
     }
+    const res = await super.update(ctx);
+    return res;
   },
 
   // delete event by linked user
@@ -49,12 +48,13 @@ module.exports = createCoreController("api::event.event", ({ strapi }) => ({
       },
     });
 
-    if (event) {
-      const res = await super.delete(ctx);
-      return res;
-    } else {
-      return ctx.unauthorized("You are not allowed to delete this event");
+    if (!event) {
+      return ctx.unauthorized("Need Authorization", {
+        thisMessage: "You are not allowed to delete this event",
+      });
     }
+    const res = await super.delete(ctx);
+    return res;
   },
 
   //  get logged in users with events
@@ -62,10 +62,9 @@ module.exports = createCoreController("api::event.event", ({ strapi }) => ({
     const user = ctx.state.user;
 
     if (!user) {
-      // return ctx.unauthorized("You are not logged in");
-      return ctx.badRequest(null, [
-        { message: [{ id: "No authorization header was found!" }] },
-      ]);
+      return ctx.unauthorized("Need authorization!", {
+        thisMessage: "You are not logged in",
+      });
     }
 
     const data = await strapi.db.query("api::event.event").findMany({
@@ -83,7 +82,9 @@ module.exports = createCoreController("api::event.event", ({ strapi }) => ({
     });
 
     if (!data) {
-      return ctx.notFound();
+      return ctx.notFound("No events found", {
+        thisMessage: "You need to add a event first!",
+      });
     }
 
     const sanitizedEntity = await this.sanitizeOutput(data, ctx);
