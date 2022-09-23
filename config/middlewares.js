@@ -19,7 +19,11 @@ module.exports = [
     config: {
       enabled: true,
       headers: "*",
-      origin: ["http://localhost:1337", "https://dj-events.vercel.app"],
+      origin: [
+        "http://localhost:1337",
+        "https://dj-events.vercel.app",
+        "https://dj-events-rose.vercel.app",
+      ],
     },
   },
   "strapi::poweredBy",
